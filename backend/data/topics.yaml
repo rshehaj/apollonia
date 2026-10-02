@@ -1,0 +1,85 @@
+# Matura History (Histori) syllabus topics mapped to Albanian Wikipedia articles.
+# Titles must be canonical article titles (not redirects) so evaluation labels match.
+
+- id: iliret
+  name: Ilirët dhe mbretëritë ilire
+  articles:
+    - Ilirët
+    - Mbretëria e Ilirisë
+    - Bardhyli
+    - Agroni i Ilirisë
+    - Teuta e Ilirisë
+    - Genti
+    - Luftërat iliro-romake
+
+- id: arberia-mesjetare
+  name: Arbëria në Mesjetë
+  articles:
+    - Principata e Arbërit
+    - Balshajt
+    - Topiajt
+
+- id: skenderbeu
+  name: Skënderbeu dhe qëndresa antiosmane
+  articles:
+    - Skënderbeu
+    - Lidhja e Lezhës
+    - Rrethimi i parë i Krujës
+
+- id: pashalleqet
+  name: Pashallëqet shqiptare
+  articles:
+    - Pashallëku i Shkodrës
+    - Bushatllinjtë
+    - Pashallëku i Janinës
+    - Ali Pashë Tepelena
+
+- id: rilindja-kombetare
+  name: Rilindja Kombëtare
+  articles:
+    - Rilindja Kombëtare Shqiptare
+    - Lidhja e Prizrenit
+    - Lidhja e Pejës
+    - Kongresi i Manastirit
+    - Naim Frashëri
+    - Abdyl Frashëri
+    - Sami Frashëri
+
+- id: pavaresia
+  name: Shpallja e Pavarësisë dhe njohja ndërkombëtare
+  articles:
+    - Shpallja e Pavarësisë së Shqipërisë
+    - Kuvendi i Vlorës
+    - Ismail Qemali
+    - Konferenca e Londrës (1912–1913)
+    - Principata e Shqipërisë
+
+- id: shqiperia-1920-1939
+  name: Shqipëria në vitet 1920–1939
+  articles:
+    - Kongresi i Lushnjes
+    - Lufta e Vlorës
+    - Lëvizja e qershorit
+    - Fan Noli
+    - Mbreti Zogu I
+    - Mbretëria Shqiptare
+
+- id: lufta-e-dyte-boterore
+  name: Shqipëria në Luftën e Dytë Botërore
+  articles:
+    - Pushtimi italian i Shqipërisë
+    - Shqipëria në Luftën e Dytë Botërore
+    - Mbledhja e Pezës
+    - Balli Kombëtar
+
+- id: komunizmi
+  name: Shqipëria komuniste
+  articles:
+    - Republika Popullore e Shqipërisë
+    - Enver Hoxha
+
+- id: tranzicioni
+  name: Rënia e komunizmit dhe tranzicioni
+  articles:
+    - Rënia e komunizmit në Shqipëri
+    - Rebelimi i vitit 1997
