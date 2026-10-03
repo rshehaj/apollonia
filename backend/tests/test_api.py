@@ -101,6 +101,24 @@ def test_search_returns_ranked_chunks(client: TestClient) -> None:
 
 
 @pytest.mark.integration
+def test_search_default_k_comes_from_settings(
+    seeded_session: Session, database_url: str, embedder: FakeEmbedder
+) -> None:
+    settings = Settings(database_url=database_url, embedder="fake", search_k=2)
+    with TestClient(create_app(settings, embedder=embedder)) as test_client:
+        response = test_client.get("/search", params={"q": "Skënderbeu Kruja"})
+
+    assert response.status_code == 200
+    assert len(response.json()["results"]) == settings.search_k
+
+
+def test_openapi_documents_default_k(offline_client: TestClient) -> None:
+    params = offline_client.get("/openapi.json").json()["paths"]["/search"]["get"]["parameters"]
+    k = next(p for p in params if p["name"] == "k")
+    assert "configuration" in k["description"]
+
+
+@pytest.mark.integration
 @pytest.mark.parametrize("mode", ["hybrid", "vector", "keyword"])
 def test_search_supports_every_mode(client: TestClient, mode: str) -> None:
     response = client.get("/search", params={"q": "Skënderbeu Kruja", "mode": mode})

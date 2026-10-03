@@ -99,9 +99,19 @@ def search_chunks(
     session: SessionDep,
     embedder: EmbedderDep,
     settings: SettingsDep,
-    k: Annotated[int, Query(ge=1, le=20)] = 6,
+    k: Annotated[
+        int | None,
+        Query(
+            ge=1,
+            le=20,
+            description="Number of results. Defaults to the server configuration "
+            "(APOLLONIA_SEARCH_K, 6 unless set).",
+        ),
+    ] = None,
     mode: SearchMode = SearchMode.HYBRID,
 ) -> SearchResponse:
+    if k is None:
+        k = settings.search_k
     results = search(session, embedder, q, k=k, candidates=settings.search_candidates, mode=mode)
     return SearchResponse(
         query=q,
