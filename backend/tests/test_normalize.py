@@ -1,4 +1,4 @@
-from apollonia.normalize import fold_accents, keyword_terms
+from apollonia.normalize import fold_accents, fold_key, keyword_terms
 
 
 def test_fold_accents_removes_albanian_diacritics() -> None:
@@ -24,3 +24,8 @@ def test_keyword_terms_strip_tsquery_operators_and_duplicates() -> None:
 def test_keyword_terms_of_stopwords_only_is_empty() -> None:
     assert keyword_terms("Kur ishte?") == []
     assert keyword_terms("   ") == []
+
+
+def test_fold_key_folds_accents_and_case() -> None:
+    assert fold_key("Shënime") == fold_key("SHENIME") == "shenime"
+    assert fold_key("Straße") == "strasse"

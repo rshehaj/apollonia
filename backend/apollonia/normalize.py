@@ -33,6 +33,11 @@ def fold_accents(text: str) -> str:
     return "".join(char for char in decomposed if not unicodedata.combining(char))
 
 
+def fold_key(text: str) -> str:
+    """Accent- and case-folded comparison key: "Shënime" and "SHENIME" both become "shenime"."""
+    return fold_accents(text).casefold()
+
+
 def keyword_terms(query: str) -> list[str]:
     """Search terms for full-text matching: folded, lower-cased, stop words removed.
 
