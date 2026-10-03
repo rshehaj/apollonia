@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  # Fail instead of re-locking if uv.lock is out of date with pyproject.toml.
+  UV_LOCKED: "1"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend — lint, types, tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          working-directory: backend
+          python-version: "3.12"
+          enable-cache: true
+
+      - name: Install dependencies from the lockfile
+        working-directory: backend
+        run: uv sync --locked
+
+      # Same gate as local runs: ruff, ruff format, mypy --strict, pytest.
+      # Integration tests start PostgreSQL + pgvector through testcontainers (Docker is
+      # available on ubuntu-latest). Tests use FakeEmbedder; no paid APIs are called.
+      - name: Quality gate
+        run: scripts/check.sh

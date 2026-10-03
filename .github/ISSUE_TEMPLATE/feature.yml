@@ -1,0 +1,35 @@
+name: Feature or task
+description: Propose new functionality or a planned piece of work.
+labels: ["type: feature"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What should change, and why does it matter for students or maintainers?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Link the relevant spec section or ADR, and any issues this depends on.
+      placeholder: "Spec: docs/specs/... §5.6 · Depends on: #12"
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Checkable outcomes that define "done".
+      value: |
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [ingest, retrieval, db, api, cli, evals, llm, frontend, ci]

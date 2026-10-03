@@ -43,5 +43,5 @@ TESTS: <command run and pass/fail counts>
 GATE: <scripts/check.sh result>
 DEVIATIONS: <each change from the plan's code and why, or "none">
 BLOCKER: <only if BLOCKED: what decision is needed>
-LEARNINGS: <2–5 bullets: non-obvious things discovered (library quirks, pitfalls)>
+NOTES: <2–5 bullets: non-obvious findings (library quirks, pitfalls)>
 ```

@@ -1,0 +1,181 @@
+# Retrieval evaluation set — original questions, labeled with the article that answers them.
+# License: CC BY-SA 4.0 (labels reference Albanian Wikipedia articles).
+
+- id: r001
+  question: Kur u themelua Lidhja e Prizrenit?
+  expected: [{title: Lidhja e Prizrenit}]
+- id: r002
+  question: Çfarë kërkoi Lidhja e Prizrenit nga Kongresi i Berlinit?
+  expected: [{title: Lidhja e Prizrenit}]
+- id: r003
+  question: Kush ishin udhëheqësit e Lidhjes së Pejës?
+  expected: [{title: Lidhja e Pejës}]
+- id: r004
+  question: Çfarë vendosi Kongresi i Manastirit për alfabetin e gjuhës shqipe?
+  expected: [{title: Kongresi i Manastirit}]
+- id: r005
+  question: Kur u shpall pavarësia e Shqipërisë?
+  expected:
+    - {title: Shpallja e Pavarësisë së Shqipërisë}
+    - {title: Kuvendi i Vlorës}
+    - {title: Ismail Qemali}
+- id: r006
+  question: Kush e ngriti flamurin kombëtar në Vlorë në vitin 1912?
+  expected:
+    - {title: Ismail Qemali}
+    - {title: Shpallja e Pavarësisë së Shqipërisë}
+    - {title: Kuvendi i Vlorës}
+- id: r007
+  question: Çfarë vendosi Konferenca e Ambasadorëve në Londër për kufijtë e Shqipërisë?
+  expected: [{title: Konferenca e Londrës (1912–1913)}]
+- id: r008
+  question: Kush ishte princi i Shqipërisë në vitin 1914?
+  expected: [{title: Principata e Shqipërisë}]
+- id: r009
+  question: Cilat ishin vendimet kryesore të Kongresit të Lushnjës?
+  expected: [{title: Kongresi i Lushnjes}]
+- id: r010
+  question: Kundër kujt luftuan shqiptarët në Luftën e Vlorës më 1920?
+  expected: [{title: Lufta e Vlorës}]
+- id: r011
+  question: Cila ngjarje e shkaktoi Lëvizjen e Qershorit 1924?
+  expected: [{title: Lëvizja e qershorit}]
+- id: r012
+  question: Cili ishte roli i Fan Nolit në qeverinë e vitit 1924?
+  expected:
+    - {title: Fan Noli}
+    - {title: Lëvizja e qershorit}
+- id: r013
+  question: Kur u shpall Ahmet Zogu mbret i shqiptarëve?
+  expected:
+    - {title: Mbreti Zogu I}
+    - {title: Mbretëria Shqiptare}
+- id: r014
+  question: Si ishte organizuar shteti gjatë Mbretërisë Shqiptare?
+  expected: [{title: Mbretëria Shqiptare}]
+- id: r015
+  question: Kur e pushtoi Italia fashiste Shqipërinë?
+  expected: [{title: Pushtimi italian i Shqipërisë}]
+- id: r016
+  question: Çfarë u vendos në Mbledhjen e Pezës?
+  expected: [{title: Mbledhja e Pezës}]
+- id: r017
+  question: Cili ishte programi politik i Ballit Kombëtar?
+  expected: [{title: Balli Kombëtar}]
+- id: r018
+  question: Si përfundoi Lufta e Dytë Botërore në Shqipëri?
+  expected: [{title: Shqipëria në Luftën e Dytë Botërore}]
+- id: r019
+  question: Kur u shpall Republika Popullore e Shqipërisë?
+  expected: [{title: Republika Popullore e Shqipërisë}]
+- id: r020
+  question: Çfarë posti mbajti Enver Hoxha pas vitit 1944?
+  expected: [{title: Enver Hoxha}]
+- id: r021
+  question: Si ra regjimi komunist në Shqipëri?
+  expected: [{title: Rënia e komunizmit në Shqipëri}]
+- id: r022
+  question: Çfarë e shkaktoi krizën e skemave piramidale në vitin 1997?
+  expected: [{title: Rebelimi i vitit 1997}]
+- id: r023
+  question: Ku jetonin ilirët në antikitet?
+  expected: [{title: Ilirët}]
+- id: r024
+  question: Cilat ishin fiset kryesore ilire?
+  expected: [{title: Ilirët}]
+- id: r025
+  question: Kush ishte mbretëresha Teuta?
+  expected: [{title: Teuta e Ilirisë}]
+- id: r026
+  question: Pse shpërtheu lufta e parë iliro-romake?
+  expected:
+    - {title: Luftërat iliro-romake}
+    - {title: Teuta e Ilirisë}
+- id: r027
+  question: Kush ishte Bardhyli dhe kundër kujt luftoi?
+  expected: [{title: Bardhyli}]
+- id: r028
+  question: Si përfundoi sundimi i mbretit Genti?
+  expected:
+    - {title: Genti}
+    - {title: Luftërat iliro-romake}
+- id: r029
+  question: Kush ishte Agroni, mbreti i ilirëve?
+  expected: [{title: Agroni i Ilirisë}]
+- id: r030
+  question: Si ishte organizuar Mbretëria Ilire?
+  expected: [{title: Mbretëria e Ilirisë}]
+- id: r031
+  question: Kur u krijua Principata e Arbërit?
+  expected: [{title: Principata e Arbërit}]
+- id: r032
+  question: Mbi cilat territore sundonte familja e Balshajve?
+  expected: [{title: Balshajt}]
+- id: r033
+  question: Cilat territore sundonte familja Topia në shekullin XIV?
+  expected: [{title: Topiajt}]
+- id: r034
+  question: Kur u mblodh Lidhja e Lezhës dhe kush mori pjesë?
+  expected:
+    - {title: Lidhja e Lezhës}
+    - {title: Skënderbeu}
+- id: r035
+  question: Si e mbrojti Skënderbeu Krujën gjatë rrethimit të parë?
+  expected:
+    - {title: Rrethimi i parë i Krujës}
+    - {title: Skënderbeu}
+- id: r036
+  question: Kur vdiq Skënderbeu?
+  expected: [{title: Skënderbeu}]
+- id: r037
+  question: Kush e themeloi Pashallëkun e Shkodrës?
+  expected:
+    - {title: Pashallëku i Shkodrës}
+    - {title: Bushatllinjtë}
+- id: r038
+  question: Cili ishte roli i familjes Bushati në Shkodër?
+  expected: [{title: Bushatllinjtë}]
+- id: r039
+  question: Si e zgjeroi Ali Pashë Tepelena pushtetin e tij?
+  expected:
+    - {title: Ali Pashë Tepelena}
+    - {title: Pashallëku i Janinës}
+- id: r040
+  question: Si përfundoi Pashallëku i Janinës?
+  expected:
+    - {title: Pashallëku i Janinës}
+    - {title: Ali Pashë Tepelena}
+- id: r041
+  question: Çfarë ishte Rilindja Kombëtare Shqiptare?
+  expected: [{title: Rilindja Kombëtare Shqiptare}]
+- id: r042
+  question: Cilat janë veprat më të njohura të Naim Frashërit?
+  expected: [{title: Naim Frashëri}]
+- id: r043
+  question: Cili ishte kontributi i Sami Frashërit në Rilindje?
+  expected: [{title: Sami Frashëri}]
+- id: r044
+  question: Çfarë roli pati Abdyl Frashëri në Lidhjen e Prizrenit?
+  expected:
+    - {title: Abdyl Frashëri}
+    - {title: Lidhja e Prizrenit}
+- id: r045
+  question: kur u themelua lidhja e prizrenit
+  expected: [{title: Lidhja e Prizrenit}]
+- id: r046
+  question: skenderbeu dhe lidhja e lezhes
+  expected:
+    - {title: Lidhja e Lezhës}
+    - {title: Skënderbeu}
+- id: r047
+  question: kongresi i lushnjes vendimet
+  expected: [{title: Kongresi i Lushnjes}]
+- id: r048
+  question: mbledhja e pezes 1942
+  expected: [{title: Mbledhja e Pezës}]
+- id: r049
+  question: cfare ndodhi ne shqiperi ne vitin 1997
+  expected: [{title: Rebelimi i vitit 1997}]
+- id: r050
+  question: naim frasheri bageti e bujqesi
+  expected: [{title: Naim Frashëri}]

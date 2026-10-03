@@ -58,6 +58,17 @@ uv run pytest -m "not integration"      # fast tests without Docker
 uv run apollonia --help                 # CLI
 ```
 
+## Issue tracking
+
+Work is tracked in GitHub issues on `rshehaj/apollonia`:
+
+- **Milestones** M1–M5 match the roadmap; each has one `type: epic` issue listing its tasks.
+- **Labels:** at least one `type:` and `area:`, exactly one `priority:`; `status: blocked` /
+  `status: needs-decision` when applicable; `review-follow-up` for deferred review findings.
+- **Issue bodies:** Summary · Context (spec section, dependencies) · Acceptance criteria ·
+  Out of scope · Definition of done. Link only to public documents.
+- Issues are closed by the maintainer's commits (`Closes #N`), never closed manually by agents.
+
 ## Workflow
 
 Milestones run through the `/milestone <id>` skill (`.claude/skills/milestone/SKILL.md`):

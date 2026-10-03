@@ -76,7 +76,7 @@ apollonia/
 ├── backend/
 │   ├── apollonia/
 │   │   ├── config.py          settings via pydantic-settings (env vars)
-│   │   ├── db/                SQLAlchemy models, Alembic migrations
+│   │   ├── db/                SQLAlchemy models, sessions, programmatic migrate
 │   │   ├── ingest/            fetch, clean, chunk, embed
 │   │   ├── retrieval/         vector, keyword, fusion
 │   │   ├── llm/               provider interface + implementations
@@ -86,6 +86,7 @@ apollonia/
 │   │   ├── api/               FastAPI app and routers
 │   │   └── cli.py             Typer CLI
 │   ├── data/topics.yaml       syllabus topic → article titles
+│   ├── migrations/            Alembic migrations (source of truth for the schema)
 │   ├── evals/data/            evaluation datasets
 │   ├── tests/
 │   └── pyproject.toml         managed with uv
@@ -159,7 +160,7 @@ Topic IDs are stable identifiers reused by the quiz (M3) and progress tracking (
 
 ### 5.4 Chunking
 
-- Section-aware: chunks never cross a top-level section boundary.
+- Section-aware: chunks never cross a section boundary (at any heading level).
 - Target size 400 tokens, maximum 512, overlap 50 tokens, measured with the embedding model's tokenizer.
 - Each chunk's embedded text is prefixed with its heading path, e.g. `Lidhja e Prizrenit > Rezistenca e armatosur`.
 - Stored metadata: article title, section path, URL, revision ID, topic IDs, chunk ordinal, content hash.
@@ -172,7 +173,7 @@ Topic IDs are stable identifiers reused by the quiz (M3) and progress tracking (
 | `chunks` | `id`, `document_id`, `ordinal`, `section_path`, `text`, `embedding vector(1024)`, `tsv tsvector`, `content_hash` |
 | `document_topics` | `document_id`, `topic_id` |
 
-- `tsv` is generated from `unaccent(text)` with the `simple` text-search configuration (Postgres has no Albanian stemmer). A GIN index serves keyword search.
+- `tsv` is generated from `unaccent(section_path || ' ' || text)` with the `simple` text-search configuration (Postgres has no Albanian stemmer). A GIN index serves keyword search.
 - An HNSW index on `embedding` (cosine distance) serves vector search.
 - Re-ingestion is idempotent: a document whose revision ID and content hash are unchanged is skipped; a changed document has its chunks replaced in a single transaction.
 
@@ -188,13 +189,13 @@ Accent folding via `unaccent` means queries such as "Skenderbeu" match "Skënder
 ### 5.7 Retrieval evaluation
 
 - Dataset `backend/evals/data/retrieval.yaml`: about 50 Albanian questions, each labeled with the article that answers it (optionally narrowed to a section). A question counts as a hit at rank *r* if the result at rank *r* matches any of its labels.
-- Metrics: **recall@5** and **MRR@10**, computed for vector-only, keyword-only, and hybrid retrieval.
+- Metrics: **recall@1**, **recall@5** and **MRR@10**, computed for vector-only, keyword-only, and hybrid retrieval.
 - `apollonia eval retrieval` writes a Markdown report to `docs/evals/`.
 
 ### 5.8 Interfaces
 
-- CLI: `apollonia ingest [--topic ID]`, `apollonia search "query" [--k N]`.
-- API: `GET /search?q=…&k=…` → JSON list of chunks with title, section path, URL, revision ID, and score.
+- CLI: `apollonia db upgrade`, `apollonia ingest [--topic ID] [--refresh]`, `apollonia search "query" [--k N] [--mode hybrid|vector|keyword]`, `apollonia eval retrieval [--dataset] [--output] [--depth]`. Exit codes: 0 success, 1 some articles failed, 2 usage error, 3 operational error.
+- API: `GET /search?q=…&k=…&mode=…` → `{query, mode, results}`, where each result has chunk id, title, section path, text, URL, revision permalink, revision ID, score and vector similarity (null for keyword-only hits).
 
 ---
 
@@ -266,9 +267,9 @@ One structured (JSON) log line per request: request ID, retrieved chunk IDs, pro
 ## 8. Testing and CI
 
 - **Unit tests:** cleaning, chunking boundaries and sizes, accent normalization, RRF fusion, citation validation, SSE event formatting.
-- **Integration tests:** PostgreSQL with pgvector (CI service container) and `FakeProvider`, covering ingest → search → ask on a small fixture corpus.
+- **Integration tests:** PostgreSQL with pgvector started per test session via testcontainers (locally and in CI), with fake embedding and LLM providers, covering ingest → search → ask on a small fixture corpus.
 - **Frontend:** ESLint, `tsc`, production build; a Playwright smoke test once the chat UI exists.
-- **CI (GitHub Actions)**, on every push and pull request: `ruff`, `mypy --strict`, `pytest`, frontend lint/type-check/build. No paid API calls.
+- **CI (GitHub Actions)**, on pushes to `main` and on every pull request: `ruff`, `mypy --strict`, `pytest`, frontend lint/type-check/build. No paid API calls.
 - **Paid evaluations** run only via a manually triggered workflow using a repository secret.
 
 ## 9. Project conventions

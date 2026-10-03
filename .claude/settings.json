@@ -7,12 +7,18 @@
       "Bash(./scripts/check.sh:*)",
       "Bash(docker compose:*)",
       "Bash(docker info:*)",
-      "Bash(docker ps:*)"
+      "Bash(docker ps:*)",
+      "Bash(gh issue:*)",
+      "Bash(gh label:*)",
+      "Bash(gh api repos/rshehaj/apollonia/milestones:*)"
     ],
     "deny": [
       "Bash(git:*)",
       "Bash(sudo:*)",
-      "Bash(rm -rf:*)"
+      "Bash(rm -rf:*)",
+      "Bash(gh repo delete:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(gh release delete:*)"
     ]
   }
 }
