@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Protocol
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from apollonia.db.models import Chunk, Document, DocumentTopic
@@ -42,8 +42,9 @@ class IngestReport:
         counts = {status: 0 for status in IngestStatus}
         for outcome in self.outcomes:
             counts[outcome.status] += 1
+        total = len(self.outcomes)
         parts = [
-            f"Ingested {len(self.outcomes)} articles: "
+            f"Ingested {total} {'article' if total == 1 else 'articles'}: "
             + ", ".join(f"{counts[s]} {s.value}" for s in IngestStatus)
             + "."
         ]
@@ -73,7 +74,10 @@ def ingest_article(
     *,
     now: datetime | None = None,
 ) -> IngestOutcome:
-    """Store ``article``; re-embed only when its revision or processed content changed."""
+    """Store ``article``; re-embed only when its revision or processed content changed.
+
+    On error the caller must roll back the session.
+    """
     drafts = chunk_sections(
         parse_sections(article.title, article.text), embedder.count_tokens, chunking
     )
@@ -88,7 +92,10 @@ def ingest_article(
     ):
         _replace_topics(session, document, wanted_topics)
         session.commit()
-        return IngestOutcome(article.title, IngestStatus.UNCHANGED, len(document.chunks))
+        chunk_count = session.scalar(
+            select(func.count()).select_from(Chunk).where(Chunk.document_id == document.id)
+        )
+        return IngestOutcome(article.title, IngestStatus.UNCHANGED, chunk_count or 0)
 
     vectors = embedder.embed_documents([d.embed_text for d in drafts]) if drafts else []
     fetched_at = now or datetime.now(UTC)
@@ -139,7 +146,11 @@ def run_ingest(
     prune: bool = False,
     on_progress: Callable[[str], None] | None = None,
 ) -> IngestReport:
-    """Fetch and store every article in ``topics``; one failure never aborts the run."""
+    """Fetch and store every article in ``topics``; one failure never aborts the run.
+
+    With prune=True, documents whose titles are no longer in the topic map, or that Wikipedia
+    reports as missing, are deleted. Pruning is skipped if any article failed.
+    """
     progress = on_progress or (lambda _message: None)
     report = IngestReport()
     articles: dict[str, Article] = {}
@@ -168,7 +179,7 @@ def run_ingest(
         except Exception as exc:
             session.rollback()
             report.failed[title] = f"{type(exc).__name__}: {exc}"
-            progress(f"   failed  {title}: {exc}")
+            progress(f"   failed  {title}: {report.failed[title]}")
             continue
         report.outcomes.append(outcome)
         progress(f"{outcome.status.value:>9}  {title} ({outcome.chunk_count} chunks)")

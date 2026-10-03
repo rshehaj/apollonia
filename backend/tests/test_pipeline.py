@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from dataclasses import replace
 
 import pytest
@@ -7,14 +8,39 @@ from sqlalchemy.orm import Session
 from apollonia.db.models import Chunk, Document
 from apollonia.embeddings import FakeEmbedder
 from apollonia.ingest.chunk import ChunkingConfig
-from apollonia.ingest.pipeline import IngestOutcome, IngestStatus, ingest_article, run_ingest
+from apollonia.ingest.pipeline import (
+    IngestOutcome,
+    IngestReport,
+    IngestStatus,
+    ingest_article,
+    run_ingest,
+)
 from apollonia.ingest.wikipedia import WikipediaError
 from apollonia.topics import Topic
 from tests.support import SAMPLE_ARTICLES, FakeArticleSource
 
 pytestmark = pytest.mark.integration
 
-LIDHJA, SKENDERBEU, _ = SAMPLE_ARTICLES
+LIDHJA, SKENDERBEU, MANASTIRI = SAMPLE_ARTICLES
+
+
+class PrizrenFailingEmbedder(FakeEmbedder):
+    """Fails whenever a text mentions Prizren, to exercise the ingest-failure branch."""
+
+    def embed_documents(self, texts: Sequence[str]) -> list[list[float]]:
+        if any("Prizren" in text for text in texts):
+            raise RuntimeError("embedder down")
+        return super().embed_documents(texts)
+
+
+class PrizrenShortVectorEmbedder(FakeEmbedder):
+    """Returns vectors of the wrong dimension for Prizren texts, so the failure happens
+    while flushing, after the old chunks were already deleted in the open transaction."""
+
+    def embed_documents(self, texts: Sequence[str]) -> list[list[float]]:
+        if any("Prizren" in text for text in texts):
+            return [[1.0, 0.0, 0.0] for _ in texts]
+        return super().embed_documents(texts)
 
 
 def test_ingest_article_creates_document_chunks_and_topics(
@@ -137,4 +163,78 @@ def test_run_ingest_forwards_refresh_and_reports_progress(
 
     assert source.requests == [("Lidhja e Prizrenit", True)]
     assert messages == ["  created  Lidhja e Prizrenit (2 chunks)"]
-    assert report.summary() == "Ingested 1 articles: 1 created, 0 updated, 0 unchanged."
+    assert report.summary() == "Ingested 1 article: 1 created, 0 updated, 0 unchanged."
+
+
+def test_run_ingest_reports_ingest_failures_and_continues(
+    session: Session, embedder: FakeEmbedder, chunking: ChunkingConfig
+) -> None:
+    ingest_article(session, SKENDERBEU, ["skenderbeu"], embedder, chunking)
+    edited = replace(LIDHJA, revision_id=202)
+    source = FakeArticleSource({"Lidhja e Prizrenit": edited, "Kongresi i Manastirit": MANASTIRI})
+    topics = [
+        Topic(id="rilindja", name="R", articles=("Lidhja e Prizrenit", "Kongresi i Manastirit"))
+    ]
+
+    messages: list[str] = []
+
+    report = run_ingest(
+        session,
+        source,
+        topics,
+        PrizrenFailingEmbedder(),
+        chunking,
+        prune=True,
+        on_progress=messages.append,
+    )
+
+    assert list(report.failed) == ["Lidhja e Prizrenit"]
+    assert "RuntimeError" in report.failed["Lidhja e Prizrenit"]
+    assert "   failed  Lidhja e Prizrenit: RuntimeError: embedder down" in messages
+    assert report.outcomes == [IngestOutcome("Kongresi i Manastirit", IngestStatus.CREATED, 1)]
+    assert report.pruned == []
+    assert sorted(session.scalars(select(Document.title))) == [
+        "Kongresi i Manastirit",
+        "Skënderbeu",
+    ]
+
+
+@pytest.mark.parametrize(
+    "failing_embedder",
+    [PrizrenFailingEmbedder(), PrizrenShortVectorEmbedder()],
+    ids=["fails-before-writing", "fails-while-flushing"],
+)
+def test_failed_reingest_keeps_the_previous_revision(
+    session: Session,
+    embedder: FakeEmbedder,
+    chunking: ChunkingConfig,
+    failing_embedder: FakeEmbedder,
+) -> None:
+    ingest_article(session, LIDHJA, ["rilindja"], embedder, chunking)
+    edited = replace(LIDHJA, revision_id=202, text=LIDHJA.text.replace("1878", "1879"))
+    source = FakeArticleSource({"Lidhja e Prizrenit": edited, "Kongresi i Manastirit": MANASTIRI})
+    topics = [
+        Topic(id="rilindja", name="R", articles=("Lidhja e Prizrenit", "Kongresi i Manastirit"))
+    ]
+
+    report = run_ingest(session, source, topics, failing_embedder, chunking)
+
+    assert list(report.failed) == ["Lidhja e Prizrenit"]
+    assert report.outcomes == [IngestOutcome("Kongresi i Manastirit", IngestStatus.CREATED, 1)]
+    session.expire_all()
+    document = session.scalars(select(Document).where(Document.title == "Lidhja e Prizrenit")).one()
+    assert document.revision_id == 101
+    assert len(document.chunks) == 2
+    assert "1878" in document.chunks[0].text
+
+
+def test_summary_pluralizes_article_count() -> None:
+    report = IngestReport(
+        outcomes=[
+            IngestOutcome("A", IngestStatus.CREATED, 1),
+            IngestOutcome("B", IngestStatus.UPDATED, 2),
+            IngestOutcome("C", IngestStatus.UNCHANGED, 3),
+        ]
+    )
+
+    assert report.summary() == "Ingested 3 articles: 1 created, 1 updated, 1 unchanged."
