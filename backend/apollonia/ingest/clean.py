@@ -4,13 +4,13 @@ import re
 import unicodedata
 from dataclasses import dataclass
 
-from apollonia.normalize import fold_accents
+from apollonia.normalize import fold_key
 
 PATH_SEPARATOR = " > "
 
 # Reference/navigation sections carry no tutoring content. Compared accent- and case-folded.
 EXCLUDED_SECTIONS = frozenset(
-    fold_accents(name).casefold()
+    fold_key(name)
     for name in (
         "Referime", "Referimet", "Shënime", "Shih edhe", "Shiko edhe", "Lidhje të jashtme",
         "Lidhjet e jashtme", "Bibliografia", "Bibliografi", "Literatura", "Burime", "Burimet",
@@ -57,7 +57,7 @@ def parse_sections(title: str, extract: str) -> list[Section]:
         heading = _SPACES.sub(" ", match.group(2)).strip()
         if skip_level is not None and level <= skip_level:
             skip_level = None
-        if skip_level is None and fold_accents(heading).casefold() in EXCLUDED_SECTIONS:
+        if skip_level is None and fold_key(heading) in EXCLUDED_SECTIONS:
             skip_level = level
         headings = [*headings[: level - 1], heading]
         path = (title, *headings)
