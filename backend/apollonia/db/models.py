@@ -6,7 +6,17 @@ from datetime import datetime
 from typing import Any
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import BigInteger, Computed, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import (
+    BigInteger,
+    Computed,
+    DateTime,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -40,6 +50,17 @@ class Document(Base):
 
 class Chunk(Base):
     __tablename__ = "chunks"
+    # Mirrors migration 0001 so that autogenerate never proposes dropping these.
+    __table_args__ = (
+        UniqueConstraint("document_id", "ordinal", name="chunks_document_id_ordinal_key"),
+        Index("ix_chunks_tsv", "tsv", postgresql_using="gin"),
+        Index(
+            "ix_chunks_embedding",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
+    )
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     document_id: Mapped[int] = mapped_column(ForeignKey("documents.id", ondelete="CASCADE"))
@@ -61,6 +82,7 @@ class Chunk(Base):
 
 class DocumentTopic(Base):
     __tablename__ = "document_topics"
+    __table_args__ = (Index("ix_document_topics_topic_id", "topic_id"),)
 
     document_id: Mapped[int] = mapped_column(
         ForeignKey("documents.id", ondelete="CASCADE"), primary_key=True
