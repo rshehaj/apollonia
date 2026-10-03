@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from apollonia.db.models import Chunk, Document
 from apollonia.embeddings import EMBEDDING_DIM, FakeEmbedder
-from apollonia.retrieval.search import SearchMode, search, vector_search
+from apollonia.retrieval.search import SearchMode, keyword_search, search, vector_search
 
 pytestmark = pytest.mark.integration
 
@@ -45,7 +45,16 @@ def test_natural_language_question_matches_keywords_despite_stopwords(
 def test_stopword_only_query_falls_back_to_vector_results(
     seeded_session: Session, embedder: FakeEmbedder
 ) -> None:
+    # "Kur" and "ishte" are stop words, so keyword search contributes nothing.
+    assert keyword_search(seeded_session, "Kur ishte?", 20) == []
     assert len(search(seeded_session, embedder, "Kur ishte?", k=2)) == 2
+
+
+def test_k_larger_than_candidates_is_honoured(
+    seeded_session: Session, embedder: FakeEmbedder
+) -> None:
+    results = search(seeded_session, embedder, "Prizren", k=5, candidates=2, mode=SearchMode.VECTOR)
+    assert len(results) == 5
 
 
 def test_k_limits_results(seeded_session: Session, embedder: FakeEmbedder) -> None:

@@ -36,7 +36,7 @@ class SearchResult:
     text: str
     url: str
     revision_id: int
-    score: float
+    score: float  # RRF score (hybrid), cosine similarity (vector) or ts_rank_cd (keyword)
     vector_similarity: float | None  # None when the chunk was not a vector candidate
 
     @property
@@ -82,6 +82,7 @@ def search(
     mode: SearchMode = SearchMode.HYBRID,
 ) -> list[SearchResult]:
     query = query.strip()
+    candidates = max(candidates, k)  # each retriever must supply at least k results
     if not query:
         raise ValueError("Query must not be empty")
 
