@@ -3,6 +3,7 @@
 import hashlib
 import math
 import re
+import threading
 from collections.abc import Sequence
 from typing import Protocol
 
@@ -42,7 +43,10 @@ class FakeEmbedder:
         for word in re.findall(r"\w+", fold_accents(text).lower()):
             index = int(hashlib.sha256(word.encode("utf-8")).hexdigest(), 16) % EMBEDDING_DIM
             vector[index] += 1.0
-        norm = math.sqrt(sum(v * v for v in vector)) or 1.0
+        if not any(vector):
+            # Like the real model, never return a zero vector: its cosine distance is NaN.
+            vector[0] = 1.0
+        norm = math.sqrt(sum(v * v for v in vector))
         return [v / norm for v in vector]
 
 
@@ -56,25 +60,35 @@ class BgeM3Embedder:
             raise RuntimeError(
                 "The bge-m3 embedder needs the 'embeddings' extra: uv sync --extra embeddings"
             ) from exc
+        # Note: BAAI/bge-m3 "main" ships only pytorch_model.bin; forcing use_safetensors would
+        # depend on a hub-side conversion and break offline use (HF_HUB_OFFLINE=1).
         self._model = SentenceTransformer(model_name, device="cpu")
-        self._model.max_seq_length = 1024  # chunks are <= 512 tokens; caps memory use
+        # Chunk bodies are <= 512 tokens; the heading prefix and special tokens come on top.
+        # 1024 leaves headroom while capping memory far below the model's 8192 default.
+        self._model.max_seq_length = 1024
         self._batch_size = batch_size
+        # The Hugging Face fast tokenizer is not safe to share across threads ("Already
+        # borrowed"), and FastAPI runs sync routes in a threadpool: serialize model access.
+        self._lock = threading.Lock()
 
     def embed_documents(self, texts: Sequence[str]) -> list[list[float]]:
-        vectors: list[list[float]] = self._model.encode(
-            list(texts),
-            batch_size=self._batch_size,
-            normalize_embeddings=True,
-            convert_to_numpy=True,
-            show_progress_bar=len(texts) > 64,
-        ).tolist()
+        with self._lock:
+            vectors: list[list[float]] = self._model.encode(
+                list(texts),
+                batch_size=self._batch_size,
+                normalize_embeddings=True,
+                convert_to_numpy=True,
+                show_progress_bar=len(texts) > 64,
+            ).tolist()
         return vectors
 
     def embed_query(self, text: str) -> list[float]:
         return self.embed_documents([text])[0]
 
     def count_tokens(self, text: str) -> int:
-        input_ids: list[int] = self._model.tokenizer(text, add_special_tokens=False)["input_ids"]
+        with self._lock:
+            encoded = self._model.tokenizer(text, add_special_tokens=False)
+        input_ids: list[int] = encoded["input_ids"]
         return len(input_ids)
 
 

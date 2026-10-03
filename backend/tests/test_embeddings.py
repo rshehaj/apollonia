@@ -53,3 +53,9 @@ def test_bge_m3_embeds_albanian_semantically() -> None:
     assert len(query) == EMBEDDING_DIM
     assert dot(query, related) > dot(query, unrelated)
     assert embedder.count_tokens("Lidhja e Prizrenit") > 0
+
+
+def test_fake_embedder_returns_a_unit_vector_for_text_without_words() -> None:
+    # A zero vector would make pgvector's cosine distance NaN.
+    vector = FakeEmbedder().embed_query("?!")
+    assert math.isclose(math.sqrt(dot(vector, vector)), 1.0)
