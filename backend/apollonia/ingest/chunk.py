@@ -17,6 +17,8 @@ _SENTENCE_BOUNDARY = re.compile(r"(?<=[.!?…])\s+|\n+")
 
 @dataclass(frozen=True)
 class ChunkingConfig:
+    # The token limits apply to the chunk body only; the heading prefix that
+    # ChunkDraft.embed_text adds comes on top of them (the embedder allows 1024 tokens).
     target_tokens: int = 400
     max_tokens: int = 512
     overlap_tokens: int = 50
@@ -62,7 +64,10 @@ def chunk_section(
     for unit in units:
         if current and _total(current) + unit[1] > config.target_tokens:
             chunks.append(_draft(section, current))
-            current = _overlap_tail(current, config.overlap_tokens)
+            tail = _overlap_tail(current, config.overlap_tokens)
+            # Carry a tail only if it is strictly shorter than the flushed chunk, so a
+            # short chunk is never repeated whole at the start of the next one.
+            current = tail if len(tail) < len(current) else []
             if _total(current) + unit[1] > config.max_tokens:
                 current = []
         current.append(unit)

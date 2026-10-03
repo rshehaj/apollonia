@@ -60,3 +60,23 @@ def test_chunk_sections_preserves_order() -> None:
 def test_invalid_chunking_config_is_rejected(target: int, maximum: int, overlap: int) -> None:
     with pytest.raises(ValueError):
         ChunkingConfig(target, maximum, overlap)
+
+
+def test_overlap_is_dropped_when_it_would_exceed_max_tokens() -> None:
+    section = Section(("T",), "a b c. " + " ".join(["w"] * 9) + ".")
+    chunks = chunk_section(section, words, ChunkingConfig(7, 10, 3))
+    assert [c.text for c in chunks] == ["a b c.", "w w w w w w w w w."]
+    assert all(words(c.text) <= 10 for c in chunks)
+
+
+def test_partial_overlap_is_dropped_when_it_would_exceed_max_tokens() -> None:
+    section = Section(("T",), "x x x x. y y y. " + " ".join(["w"] * 8) + ".")
+    chunks = chunk_section(section, words, ChunkingConfig(7, 10, 3))
+    assert [c.text for c in chunks] == ["x x x x. y y y.", "w w w w w w w w."]
+    assert all(words(c.text) <= 10 for c in chunks)
+
+
+def test_short_chunk_is_not_repeated_whole_as_overlap() -> None:
+    section = Section(("T",), "a b. " + " ".join(["w"] * 8) + ".")
+    chunks = chunk_section(section, words, ChunkingConfig(7, 12, 3))
+    assert [c.text for c in chunks] == ["a b.", "w w w w w w w w."]
