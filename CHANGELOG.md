@@ -6,6 +6,14 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- A failure to write the Wikipedia cache (disk full, read-only directory, text that cannot be
+  encoded) is logged and no longer aborts ingestion; temporary cache files use unique names.
+- Additional reference and "see also" sections found in the real corpus (`Shiko gjithashtu`,
+  `Shiko dhe këtë`, `Shiko edhe këtë`, `Linqe`, `Literaturë` and an external-links variant)
+  are excluded from indexing.
+
 ## [0.1.0] - 2026-10-03
 
 ### Added

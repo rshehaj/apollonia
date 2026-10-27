@@ -1,3 +1,6 @@
+import hashlib
+import json
+import logging
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -231,6 +234,79 @@ def test_cache_write_leaves_no_temporary_files(tmp_path: Path) -> None:
     )
     client.fetch_article("Lidhja e Prizrenit")
     assert [p.suffix for p in tmp_path.iterdir()] == [".json"]
+
+
+def test_cache_write_failure_is_logged_and_article_still_returned(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    cache_dir = tmp_path / "cache"
+    cache_dir.write_text("not a directory", encoding="utf-8")  # mkdir/write will fail
+    client = make_client(lambda request: httpx.Response(200, json=page_payload()), cache_dir)
+
+    with caplog.at_level(logging.WARNING, logger="apollonia.ingest.wikipedia"):
+        article = client.fetch_article("Lidhja e Prizrenit")
+
+    assert article is not None
+    assert article.revision_id == 2996079
+    assert "Could not write cache entry" in caplog.text
+
+
+def test_failed_cache_replace_removes_the_temporary_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    def failing_replace(src: object, dst: object) -> None:
+        raise OSError(28, "No space left on device")
+
+    monkeypatch.setattr("apollonia.ingest.wikipedia.os.replace", failing_replace)
+    client = make_client(
+        lambda request: httpx.Response(200, json=page_payload()), cache_dir=tmp_path
+    )
+
+    with caplog.at_level(logging.WARNING, logger="apollonia.ingest.wikipedia"):
+        article = client.fetch_article("Lidhja e Prizrenit")
+
+    assert article is not None
+    assert list(tmp_path.iterdir()) == []
+    assert "No space left on device" in caplog.text
+
+
+def test_unencodable_extract_is_not_cached_but_still_returned(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    # JSON allows a lone surrogate escape; it cannot be encoded as UTF-8 for the cache.
+    body = json.dumps(page_payload(extract="Tekst \ud800."), ensure_ascii=True)
+    assert "\\ud800" in body
+    client = make_client(
+        lambda request: httpx.Response(
+            200, content=body.encode("ascii"), headers={"Content-Type": "application/json"}
+        ),
+        cache_dir=tmp_path,
+    )
+
+    with caplog.at_level(logging.WARNING, logger="apollonia.ingest.wikipedia"):
+        article = client.fetch_article("Lidhja e Prizrenit")
+
+    assert article is not None
+    assert article.text == "Tekst \ud800."
+    assert "Could not write cache entry" in caplog.text
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_cache_write_uses_a_unique_temporary_name(tmp_path: Path) -> None:
+    # A stale or concurrent writer's fixed-name temp path must not block the write.
+    digest = hashlib.sha256(b"Lidhja e Prizrenit").hexdigest()
+    (tmp_path / f"{digest}.tmp").mkdir()
+    calls: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request)
+        return httpx.Response(200, json=page_payload())
+
+    client = make_client(handler, cache_dir=tmp_path)
+    assert client.fetch_article("Lidhja e Prizrenit") is not None
+    assert client.fetch_article("Lidhja e Prizrenit") is not None
+    assert len(calls) == 1
+    assert (tmp_path / f"{digest}.json").is_file()
 
 
 @pytest.mark.parametrize(

@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import math
 import os
+import tempfile
 import time
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
@@ -17,6 +19,8 @@ import httpx
 
 RETRYABLE_STATUS = frozenset({429, 500, 502, 503, 504})
 MAX_RETRY_AFTER_S = 60.0
+
+logger = logging.getLogger(__name__)
 
 
 class WikipediaError(RuntimeError):
@@ -108,10 +112,7 @@ class WikipediaClient:
             raise WikipediaError(f"Unexpected API response for {title!r}") from exc
 
         if cache_file is not None:
-            cache_file.parent.mkdir(parents=True, exist_ok=True)
-            tmp_file = cache_file.with_suffix(".tmp")
-            tmp_file.write_text(json.dumps(asdict(article), ensure_ascii=False), encoding="utf-8")
-            os.replace(tmp_file, cache_file)
+            _write_cache(cache_file, article)
         return article
 
     def _cache_file(self, title: str) -> Path | None:
@@ -163,6 +164,28 @@ def _read_cache(cache_file: Path) -> Article | None:
     except (ValueError, TypeError, OSError):
         return None
     return article
+
+
+def _write_cache(cache_file: Path, article: Article) -> None:
+    """Atomically store ``article``; best effort, so a failure is logged and ignored."""
+    tmp_name: str | None = None
+    try:
+        cache_file.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.NamedTemporaryFile(
+            "w",
+            encoding="utf-8",
+            dir=cache_file.parent,
+            prefix=f"{cache_file.stem}.",
+            suffix=".tmp",
+            delete=False,
+        ) as tmp:
+            tmp_name = tmp.name
+            tmp.write(json.dumps(asdict(article), ensure_ascii=False))
+        os.replace(tmp_name, cache_file)
+    except (OSError, UnicodeError) as exc:
+        logger.warning("Could not write cache entry %s: %s", cache_file, exc)
+        if tmp_name is not None:
+            Path(tmp_name).unlink(missing_ok=True)
 
 
 def _parse_retry_after(value: str | None) -> float:

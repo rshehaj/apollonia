@@ -15,6 +15,8 @@ EXCLUDED_SECTIONS = frozenset(
         "Referime", "Referimet", "Shënime", "Shih edhe", "Shiko edhe", "Lidhje të jashtme",
         "Lidhjet e jashtme", "Bibliografia", "Bibliografi", "Literatura", "Burime", "Burimet",
         "Galeria", "Shënimet", "Referenca", "Referencat", "Lexime të mëtejshme",
+        "Shiko gjithashtu", "Shiko dhe këtë", "Shiko edhe këtë", "Linqe", "Literaturë",
+        "Lidhje të jashtme/Burimi i të dhënave",
     )
 )  # fmt: skip
 

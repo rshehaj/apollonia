@@ -102,6 +102,43 @@ def test_additional_reference_sections_are_excluded() -> None:
 
 
 @pytest.mark.parametrize(
+    "heading",
+    [
+        "Shiko gjithashtu",
+        "Shiko dhe këtë",
+        "Shiko edhe këtë",
+        "Lidhje të jashtme/Burimi i të dhënave",
+        "Linqe",
+        "Literaturë",
+    ],
+)
+def test_corpus_reference_sections_are_excluded(heading: str) -> None:
+    extract = f"Hyrje.\n== {heading} ==\nLidhje drejt artikujve të tjerë.\n== Vepra ==\nRomane."
+    assert parse_sections("T", extract) == [
+        Section(("T",), "Hyrje."),
+        Section(("T", "Vepra"), "Romane."),
+    ]
+
+
+def test_literature_subsection_under_content_heading_is_excluded() -> None:
+    extract = (
+        "== Jeta ==\nLindi në Gjirokastër.\n=== Literaturë ===\nKadare, I. (1981).\n"
+        "=== Vitet e fundit ===\nJetoi në Paris."
+    )
+    assert parse_sections("T", extract) == [
+        Section(("T", "Jeta"), "Lindi në Gjirokastër."),
+        Section(("T", "Jeta", "Vitet e fundit"), "Jetoi në Paris."),
+    ]
+
+
+def test_titles_of_works_section_is_kept() -> None:
+    extract = "== Titujt e veprave. ==\nGjenerali i ushtrisë së vdekur."
+    assert parse_sections("T", extract) == [
+        Section(("T", "Titujt e veprave."), "Gjenerali i ushtrisë së vdekur."),
+    ]
+
+
+@pytest.mark.parametrize(
     ("extract", "expected"),
     [
         pytest.param("", [], id="empty"),
